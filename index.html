@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blinkit Clone - COD</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; }
+
+        /* ===== STORE STYLES ===== */
+        .header {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white; padding: 20px; text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: relative;
+        }
+        .header h1 { font-size: 28px; margin-bottom: 5px; }
+        .header p { font-size: 14px; opacity: 0.9; }
+        .user-info {
+            position: absolute; left: 30px; top: 50%;
+            transform: translateY(-50%); color: white; font-size: 14px;
+        }
+        .admin-btn {
+            position: absolute; left: 30px; top: 80%;
+            transform: translateY(-50%); color: white;
+            font-size: 12px; text-decoration: underline; opacity: 0.8;
+            cursor: pointer; background: none; border: none;
+        }
+        .cart-icon {
+            position: absolute; right: 30px; top: 50%;
+            transform: translateY(-50%); cursor: pointer; font-size: 24px;
+            background: white; color: #ff6b35; padding: 8px 12px;
+            border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .cart-count {
+            position: absolute; top: -5px; right: -5px;
+            background: #ff4444; color: white; font-size: 12px;
+            font-weight: bold; padding: 2px 6px; border-radius: 50%; display: none;
+        }
+        .cart-count.show { display: block; }
+
+        .search-container { max-width: 600px; margin: 20px auto; padding: 0 20px; }
+        .search-box {
+            width: 100%; padding: 15px 20px; border: 2px solid #ff6b35;
+            border-radius: 30px; font-size: 16px; outline: none;
+        }
+        .category-tabs {
+            display: flex; justify-content: center; gap: 10px;
+            margin: 20px 0; flex-wrap: wrap; padding: 0 10px;
+        }
+        .category-tab {
+            padding: 10px 20px; border: 2px solid #ff6b35; background: white;
+            color: #ff6b35; border-radius: 25px; cursor: pointer;
+            font-size: 14px; font-weight: 600; transition: all 0.2s;
+        }
+        .category-tab:hover, .category-tab.active {
+            background: #ff6b35; color: white;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .product-card {
+            background: white; border-radius: 12px; padding: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.2s; text-align: center;
+        }
+        .product-card:hover { transform: translateY(-5px); }
+        .product-image { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 10px; }
+        .product-name { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 5px; }
+        .product-price { font-size: 18px; font-weight: 700; color: #ff6b35; margin-bottom: 5px; }
+        .delivery-time { font-size: 12px; color: #666; margin-bottom: 12px; }
+        .add-btn {
+            background: #4CAF50; color: white; border: none;
+            padding: 10px 30px; border-radius: 6px; cursor: pointer;
+            font-size: 14px; font-weight: 600;
+        }
+        .add-btn:hover { background: #45a049; }
+
+        /* Cart Sidebar */
+        .cart-sidebar {
+            position: fixed; right: -100%; top: 0; width: 350px; height: 100%;
+            background: white; box-shadow: -5px 0 20px rgba(0,0,0,0.2);
+            transition: right 0.3s ease; z-index: 1000;
+            display: flex; flex-direction: column;
+        }
+        .cart-sidebar.open { right: 0; }
+        .cart-header {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white; padding: 20px; display: flex;
+            justify-content: space-between; align-items: center;
+        }
+        .close-cart { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+        .cart-items { flex: 1; overflow-y: auto; padding: 15px; }
+        .cart-item {
+            display: flex; justify-content: space-between;
+            align-items: center; padding: 12px; border-bottom: 1px solid #eee;
+        }
+        .cart-item-info h4 { font-size: 14px; color: #333; }
+        .cart-item-info p { font-size: 13px; color: #ff6b35; font-weight: 600; }
+        .remove-btn { background: #ff4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .cart-empty { text-align: center; padding: 50px; color: #999; }
+        .cart-footer { padding: 20px; border-top: 2px solid #eee; background: #fafafa; }
+        .cart-total { display: flex; justify-content: space-between; font-size: 18px; font-weight: 700; margin-bottom: 15px; }
+        .checkout-btn { width: 100%; background: #4CAF50; color: white; border: none; padding: 15px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 999; }
+        .overlay.show { display: block; }
+
+        /* COD Badge */
+        .cod-badge {
+            background: #4CAF50;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        /* Order Success Modal */
+        .success-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); display: none;
+            justify-content: center; align-items: center; z-index: 3000; padding: 20px;
+        }
+        .success-modal.show { display: flex; }
+        .success-box {
+            background: white; padding: 40px; border-radius: 16px;
+            width: 100%; max-width: 400px; text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            animation: popIn 0.3s ease;
+        }
+        @keyframes popIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .success-icon { font-size: 60px; margin-bottom: 15px; }
+        .success-box h2 { color: #4CAF50; margin-bottom: 10px; }
+        .success-box p { color: #666; margin-bottom: 20px; line-height: 1.6; }
+        .success-btn {
+            background: #ff6b35; color: white; border: none;
+            padding: 12px 30px; border-radius: 8px; font-size: 16px;
+            font-weight: 600; cursor: pointer;
+        }
+
+        /* Auth Modal */
+        .auth-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: none;
+            justify-content: center; align-items: center; z-index: 2000; padding: 20px;
+        }
+        .auth-modal.show { display: flex; }
+        .auth-box {
+            background: white; padding: 30px; border-radius: 12px;
+            width: 100%; max-width: 350px; box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+        .auth-box h2 { text-align: center; color: #ff6b35; margin-bottom: 20px; }
+        .auth-input { width: 100%; padding: 12px; margin-bottom: 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; }
+        .auth-input:focus { border-color: #ff6b35; outline: none; }
+        .auth-btn { width: 100%; padding: 12px; background: #ff6b35; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
+        .auth-switch { text-align: center; color: #666; font-size: 14px; }
+        .auth-switch a { color: #ff6b35; cursor: pointer; }
+        .close-auth { float: right; font-size: 24px; cursor: pointer; color: #999; }
+
+        /* Order History */
+        .order-history-section {
+            max-width: 1200px; margin: 20px auto; padding: 20px;
+            border: 1px solid #ff6b35; border-radius: 8px;
+            background: #fff; display: none;
+        }
+        .order-history-section h2 { color: #333; border-bottom: 2px solid #f2f2f2; padding-bottom: 10px; margin-bottom: 15px; }
+        .order-card { padding: 15px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 6px; background: #fafafa; }
+        .order-card p { margin: 3px 0; }
+        .order-price { color: #e23744; font-weight: bold; }
+        .cod-label {
+            background: #4CAF50;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* ===== ADMIN PANEL STYLES ===== */
+        .admin-panel { display: none; }
+        .admin-panel.active { display: block; }
+
+        .admin-header {
+            background: #1a1a2e; color: white; padding: 15px 25px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .admin-header h2 { font-size: 22px; }
+        .back-btn {
+            background: #ff6b35; color: white; border: none;
+            padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;
+        }
+
+        .admin-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px; padding: 20px;
+        }
+        .admin-stat-card {
+            background: white; padding: 25px; border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center;
+        }
+        .admin-stat-card .icon { font-size: 35px; margin-bottom: 10px; }
+        .admin-stat-card .number { font-size: 30px; font-weight: 700; color: #ff6b35; }
+        .admin-stat-card .label { color: #666; font-size: 14px; margin-top: 5px; }
+
+        .admin-section {
+            background: white; margin: 20px; padding: 25px;
+            border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .admin-section h3 {
+            color: #333; margin-bottom: 20px; padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .admin-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .admin-table th, .admin-table td {
+            padding: 12px; text-align: left; border-bottom: 1px solid #eee;
+        }
+        .admin-table th { background: #f8f9fa; font-weight: 600; color: #555; }
+        .admin-table tr:hover { background: #f8f9fa; }
+
+        .admin-btn {
+            padding: 8px 16px; border: none; border-radius: 6px;
+            cursor: pointer; font-size: 13px; font-weight: 600;
+        }
+        .btn-green { background: #4CAF50; color: white; }
+        .btn-red { background: #f44336; color: white; }
+        .btn-blue { background: #2196F3; color: white; }
+
+        .admin-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px; margin-bottom: 20px;
+        }
+        .admin-form input, .admin-form select {
+            padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px;
+        }
+        .admin-form input:focus { border-color: #ff6b35; outline: none; }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .header { padding: 15px 10px; }
+            .header h1 { font-size: 22px; }
+            .user-info { position: static; transform: none; margin-bottom: 10px; display: flex; justify-content: center; gap: 5px; }
+            .admin-btn { display: none; }
+            .cart-icon { right: 15px; font-size: 20px; padding: 6px 10px; }
+            .products-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            .product-image { height: 120px; }
+            .cart-sidebar { width: 100%; right: -100%; }
+            .admin-stats { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 480px) {
+            .products-grid { grid-template-columns: 1fr; }
+            .admin-stats { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==================== STORE PAGE ==================== -->
+    <div id="store-page">
+        <!-- Login/Signup Modal -->
+        <div class="auth-modal" id="auth-modal">
+            <div class="auth-box" id="login-box">
+                <span class="close-auth" onclick="closeAuth()">✕</span>
+                <h2>🔐 Login</h2>
+                <input type="text" class="auth-input" id="login-username" placeholder="Username">
+                <input type="password" class="auth-input" id="login-password" placeholder="Password">
+                <button class="auth-btn" onclick="login()">Login</button>
+                <div class="auth-switch">New user? <a onclick="showSignup()">Signup</a></div>
+            </div>
+            <div class="auth-box" id="signup-box" style="display:none;">
+                <span class="close-auth" onclick="closeAuth()">✕</span>
+                <h2>📝 Signup</h2>
+                <input type="text" class="auth-input" id="signup-username" placeholder="Username">
+                <input type="password" class="auth-input" id="signup-password" placeholder="Password">
+                <button class="auth-btn" onclick="signup()">Signup</button>
+                <div class="auth-switch">Already have account? <a onclick="showLogin()">Login</a></div>
+            </div>
+        </div>
+
+        <!-- COD Order Success Modal -->
+        <div class="success-modal" id="success-modal">
+            <div class="success-box">
+                <div class="success-icon">🎉</div>
+                <h2>Order Placed!</h2>
+                <p id="success-message">Your order has been placed successfully!<br>Pay cash when your order arrives.</p>
+                <button class="success-btn" onclick="closeSuccessModal()">Continue Shopping</button>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <div class="header">
+            <div class="user-info" id="user-info">
+                <button onclick="showLogin()" style="background:white;color:#ff6b35;border:none;padding:8px 15px;border-radius:20px;cursor:pointer;font-weight:600;">Login</button>
+                <button onclick="showSignup()" style="background:transparent;color:white;border:2px solid white;padding:8px 15px;border-radius:20px;cursor:pointer;font-weight:600;margin-left:5px;">Signup</button>
+            </div>
+            <button class="admin-btn" onclick="showAdmin()">⚡ Admin Panel</button>
+            <h1>⚡ Blinkit Clone</h1>
+            <p>Delivery in 10 minutes | 💰 Cash on Delivery</p>
+            <div class="cart-icon" onclick="toggleCart()">
+                🛒
+                <span class="cart-count" id="cart-count">0</span>
+            </div>
+        </div>
+
+        <!-- Search -->
+        <div class="search-container">
+            <input type="text" class="search-box" id="search-input" placeholder="🔍 Search products..." onkeyup="searchProducts()">
+        </div>
+
+        <!-- Categories -->
+        <div class="category-tabs">
+            <button class="category-tab active" onclick="filterCategory('all', this)">All</button>
+            <button class="category-tab" onclick="filterCategory('Fruits', this)">🍏 Fruits</button>
+            <button class="category-tab" onclick="filterCategory('Vegetables', this)">🥬 Vegetables</button>
+            <button class="category-tab" onclick="filterCategory('Dairy', this)">🥛 Dairy</button>
+        </div>
+
+        <!-- Products -->
+        <div class="container">
+            <div id="products-container" class="products-grid">
+                <div style="text-align:center;padding:50px;color:#666;">Loading products...</div>
+            </div>
+        </div>
+
+        <!-- Order History -->
+        <div class="order-history-section" id="order-history-section">
+            <h2>My Order History</h2>
+            <div id="orders-container"><p>No orders placed yet.</p></div>
+        </div>
+
+        <!-- Cart Sidebar -->
+        <div class="overlay" id="overlay" onclick="toggleCart()"></div>
+        <div class="cart-sidebar" id="cart-sidebar">
+            <div class="cart-header">
+                <h2>🛒 Your Cart</h2>
+                <button class="close-cart" onclick="toggleCart()">✕</button>
+            </div>
+            <div class="cart-items" id="cart-items">
+                <div class="cart-empty">Your cart is empty 🛍️</div>
+            </div>
+            <div class="cart-footer">
+                <div style="text-align: center; margin-bottom: 10px;">
+                    <span class="cod-badge">💰 Cash on Delivery</span>
+                </div>
+                <div class="cart-total">
+                    <span>Total:</span>
+                    <span id="cart-total">₹0</span>
+                </div>
+                <button class="checkout-btn" onclick="checkout()">Place Order (COD) →</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== ADMIN PANEL ==================== -->
+    <div class="admin-panel" id="admin-panel">
+        <div class="admin-header">
+            <h2>⚡ Admin Panel</h2>
+            <button class="back-btn" onclick="showStore()">← Back to Store</button>
+        </div>
+
+        <!-- Stats -->
+        <div class="admin-stats">
+            <div class="admin-stat-card">
+                <div class="icon">👥</div>
+                <div class="number" id="admin-stat-users">0</div>
+                <div class="label">Total Users</div>
+            </div>
+            <div class="admin-stat-card">
+                <div class="icon">🛍️</div>
+                <div class="number" id="admin-stat-products">0</div>
+                <div class="label">Products</div>
+            </div>
+            <div class="admin-stat-card">
+                <div class="icon">📦</div>
+                <div class="number" id="admin-stat-orders">0</div>
+                <div class="label">Orders</div>
+            </div>
+            <div class="admin-stat-card">
+                <div class="icon">💰</div>
+                <div class="number" id="admin-stat-revenue">₹0</div>
+                <div class="label">Revenue</div>
+            </div>
+        </div>
+
+        <!-- Add Product -->
+        <div class="admin-section">
+            <h3>➕ Add New Product</h3>
+            <div class="admin-form">
+                <input type="text" id="admin-prod-name" placeholder="Product Name">
+                <input type="number" id="admin-prod-price" placeholder="Price (₹)">
+                <select id="admin-prod-category">
+                    <option value="Fruits">Fruits</option>
+                    <option value="Vegetables">Vegetables</option>
+                    <option value="Dairy">Dairy</option>
+                </select>
+                <input type="text" id="admin-prod-image" placeholder="Image URL (optional)">
+            </div>
+            <button class="admin-btn btn-green" onclick="adminAddProduct()">Add Product</button>
+        </div>
+
+        <!-- Products List -->
+        <div class="admin-section">
+            <h3>🛍️ All Products</h3>
+            <table class="admin-table">
+                <thead>
+                    <tr><th>ID</th><th>Name</th><th>Price</th><th>Category</th><th>Action</th></tr>
+                </thead>
+                <tbody id="admin-products-table">
+                    <tr><td colspan="5" style="text-align:center;padding:30px;color:#999;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Orders List -->
+        <div class="admin-section">
+            <h3>📦 All Orders</h3>
+            <table class="admin-table">
+                <thead>
+                    <tr><th>Order ID</th><th>User</th><th>Items</th><th>Total</th><th>Status</th><th>Payment</th><th>Date</th></tr>
+                </thead>
+                <tbody id="admin-orders-table">
+                    <tr><td colspan="7" style="text-align:center;padding:30px;color:#999;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Users List -->
+        <div class="admin-section">
+            <h3>👥 All Users</h3>
+            <table class="admin-table">
+                <thead>
+                    <tr><th>ID</th><th>Username</th></tr>
+                </thead>
+                <tbody id="admin-users-table">
+                    <tr><td colspan="2" style="text-align:center;padding:30px;color:#999;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000';
+        let currentUser = null;
+
+        // ===== PAGE SWITCHING =====
+        function showAdmin() {
+            document.getElementById('store-page').style.display = 'none';
+            document.getElementById('admin-panel').classList.add('active');
+            loadAdminStats();
+            loadAdminProducts();
+            loadAdminOrders();
+            loadAdminUsers();
+        }
+
+        function showStore() {
+            document.getElementById('admin-panel').classList.remove('active');
+            document.getElementById('store-page').style.display = 'block';
+            loadProducts();
+        }
+
+        // ===== AUTH =====
+        function showLogin() {
+            document.getElementById('auth-modal').classList.add('show');
+            document.getElementById('login-box').style.display = 'block';
+            document.getElementById('signup-box').style.display = 'none';
+        }
+        function showSignup() {
+            document.getElementById('auth-modal').classList.add('show');
+            document.getElementById('login-box').style.display = 'none';
+            document.getElementById('signup-box').style.display = 'block';
+        }
+        function closeAuth() {
+            document.getElementById('auth-modal').classList.remove('show');
+        }
+
+        async function signup() {
+            const username = document.getElementById('signup-username').value;
+            const password = document.getElementById('signup-password').value;
+            if (!username || !password) { alert('Fill all fields!'); return; }
+            try {
+                const res = await fetch(`${API_BASE}/signup?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`, { method: 'POST' });
+                const data = await res.json();
+                if (data.error) alert(data.error); else { alert(data.message); showLogin(); }
+            } catch (e) { alert('Signup failed!'); }
+        }
+
+        async function login() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            if (!username || !password) { alert('Fill all fields!'); return; }
+            try {
+                const res = await fetch(`${API_BASE}/login?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`, { method: 'POST' });
+                const data = await res.json();
+                if (data.error) alert(data.error); else {
+                    alert(data.message); closeAuth(); currentUser = data.user;
+                    document.getElementById('user-info').innerHTML = `<span style="color:white;">👤 ${data.user}</span><button onclick="logout()" style="background:transparent;color:white;border:2px solid white;padding:5px 10px;border-radius:15px;cursor:pointer;margin-left:10px;">Logout</button>`;
+                    loadOrderHistory(data.user);
+                }
+            } catch (e) { alert('Login failed!'); }
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('user-info').innerHTML = `<button onclick="showLogin()" style="background:white;color:#ff6b35;border:none;padding:8px 15px;border-radius:20px;cursor:pointer;font-weight:600;">Login</button><button onclick="showSignup()" style="background:transparent;color:white;border:2px solid white;padding:8px 15px;border-radius:20px;cursor:pointer;font-weight:600;margin-left:5px;">Signup</button>`;
+            document.getElementById('order-history-section').style.display = 'none';
+        }
+
+        // ===== SUCCESS MODAL =====
+        function showSuccessModal(message) {
+            document.getElementById('success-message').innerHTML = message;
+            document.getElementById('success-modal').classList.add('show');
+        }
+
+        function closeSuccessModal() {
+            document.getElementById('success-modal').classList.remove('show');
+        }
+
+        // ===== STORE FUNCTIONS =====
+        async function loadProducts() {
+            try {
+                const res = await fetch(`${API_BASE}/products`);
+                const data = await res.json();
+                const container = document.getElementById('products-container');
+                container.innerHTML = '';
+                data.products.forEach(product => {
+                    const card = document.createElement('div');
+                    card.className = 'product-card';
+                    card.innerHTML = `<img src="${product.image}" class="product-image" onerror="this.src='https://via.placeholder.com/200x150?text=${encodeURIComponent(product.name)}'"><div class="product-name">${product.name}</div><div class="product-price">₹${product.price}</div><div class="delivery-time">⚡ ${product.delivery_time}</div><span class="cod-badge">COD Available</span><br><button class="add-btn" onclick="addToCart(${product.id}, '${product.name.replace(/'/g, "\\'")}', ${product.price})" style="margin-top:8px;">ADD</button>`;
+                    container.appendChild(card);
+                });
+            } catch (e) { document.getElementById('products-container').innerHTML = '<div style="text-align:center;padding:50px;color:#ff6b35;">Failed to load products!</div>'; }
+        }
+
+        function toggleCart() {
+            document.getElementById('cart-sidebar').classList.toggle('open');
+            document.getElementById('overlay').classList.toggle('show');
+            loadCart();
+        }
+
+        async function loadCart() {
+            try {
+                const res = await fetch(`${API_BASE}/cart`);
+                const data = await res.json();
+                updateCartUI(data);
+            } catch (e) { console.error(e); }
+        }
+
+        function updateCartUI(data) {
+            const cartCount = document.getElementById('cart-count');
+            const cartTotal = document.getElementById('cart-total');
+            const cartItems = document.getElementById('cart-items');
+
+            if (data.count > 0) { cartCount.textContent = data.count; cartCount.classList.add('show'); }
+            else { cartCount.classList.remove('show'); }
+            cartTotal.textContent = `₹${data.total}`;
+
+            if (data.cart.length === 0) { cartItems.innerHTML = '<div class="cart-empty">Your cart is empty 🛍️</div>'; return; }
+            cartItems.innerHTML = '';
+            data.cart.forEach(item => {
+                const div = document.createElement('div'); div.className = 'cart-item';
+                div.innerHTML = `<div class="cart-item-info"><h4>${item.name}</h4><p>₹${item.price} x ${item.quantity}</p></div><button class="remove-btn" onclick="removeFromCart(${item.product_id})">Remove</button>`;
+                cartItems.appendChild(div);
+            });
+        }
+
+        async function addToCart(productId, productName, productPrice) {
+            try {
+                const res = await fetch(`${API_BASE}/cart/add`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ product_id: productId, name: productName, price: productPrice, quantity: 1 })
+                });
+                const data = await res.json();
+                if (data.cart) {
+                    const totalItems = data.cart.reduce((sum, item) => sum + item.quantity, 0);
+                    document.getElementById('cart-count').textContent = totalItems;
+                    document.getElementById('cart-count').classList.add('show');
+                }
+                alert(`${productName} added to cart! 🛒`);
+            } catch (e) { alert('Failed to add!'); }
+        }
+
+        async function removeFromCart(productId) {
+            try {
+                const res = await fetch(`${API_BASE}/cart/remove/${productId}`, { method: 'DELETE' });
+                const data = await res.json(); updateCartUI(data);
+            } catch (e) { console.error(e); }
+        }
+
+        // ===== COD CHECKOUT (NO RAZORPAY!) =====
+        async function checkout() {
+            const totalText = document.getElementById('cart-total').innerText;
+            const totalAmount = parseFloat(totalText.replace(/[^\d.]/g, '')) || 0;
+            if (totalAmount === 0) { alert('Cart is empty!'); return; }
+            const userEmail = currentUser || "guest@blinkit.com";
+
+            try {
+                const cartRes = await fetch(`${API_BASE}/cart`);
+                const cartData = await cartRes.json();
+                if (!cartData.cart || cartData.cart.length === 0) { alert('Cart empty!'); return; }
+
+                const items = cartData.cart.map(item => ({ 
+                    name: item.name, 
+                    price: item.price, 
+                    quantity: item.quantity 
+                }));
+
+                // Create COD Order - No payment gateway needed!
+                const res = await fetch(`${API_BASE}/create-order`, {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        user_email: userEmail, 
+                        items: items, 
+                        total_price: totalAmount 
+                    })
+                });
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    // Show success modal instead of Razorpay
+                    showSuccessModal(
+                        `Order #${data.order_id} placed successfully!<br><br>` +
+                        `💰 Amount: ₹${data.amount}<br>` +
+                        `📦 Payment: Cash on Delivery<br><br>` +
+                        `Pay ₹${data.amount} when your order arrives!`
+                    );
+                    
+                    // Clear cart
+                    await fetch(`${API_BASE}/cart/clear`, { method: 'DELETE' });
+                    loadCart();
+                    toggleCart();
+                    if (currentUser) loadOrderHistory(currentUser);
+                } else {
+                    alert('Order failed! Please try again.');
+                }
+
+            } catch (e) { 
+                console.error(e);
+                alert('Checkout failed!'); 
+            }
+        }
+
+        async function searchProducts() {
+            const query = document.getElementById('search-input').value;
+            if (!query) { loadProducts(); return; }
+            try {
+                const res = await fetch(`${API_BASE}/products/search?query=${encodeURIComponent(query)}`);
+                const data = await res.json();
+                const container = document.getElementById('products-container');
+                container.innerHTML = '';
+                if (data.products.length === 0) { container.innerHTML = '<div style="text-align:center;padding:50px;color:#ff6b35;">No products found!</div>'; return; }
+                data.products.forEach(product => {
+                    const card = document.createElement('div'); card.className = 'product-card';
+                    card.innerHTML = `<img src="${product.image}" class="product-image" onerror="this.src='https://via.placeholder.com/200x150?text=${encodeURIComponent(product.name)}'"><div class="product-name">${product.name}</div><div class="product-price">₹${product.price}</div><div class="delivery-time">⚡ ${product.delivery_time}</div><span class="cod-badge">COD Available</span><br><button class="add-btn" onclick="addToCart(${product.id}, '${product.name.replace(/'/g, "\\'")}', ${product.price})" style="margin-top:8px;">ADD</button>`;
+                    container.appendChild(card);
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        async function filterCategory(category, element) {
+            document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+            element.classList.add('active');
+            if (category === 'all') { loadProducts(); return; }
+            try {
+                const res = await fetch(`${API_BASE}/products/category/${encodeURIComponent(category)}`);
+                const data = await res.json();
+                const container = document.getElementById('products-container');
+                container.innerHTML = '';
+                if (data.products.length === 0) { container.innerHTML = '<div style="text-align:center;padding:50px;color:#ff6b35;">No products!</div>'; return; }
+                data.products.forEach(product => {
+                    const card = document.createElement('div'); card.className = 'product-card';
+                    card.innerHTML = `<img src="${product.image}" class="product-image" onerror="this.src='https://via.placeholder.com/200x150?text=${encodeURIComponent(product.name)}'"><div class="product-name">${product.name}</div><div class="product-price">₹${product.price}</div><div class="delivery-time">⚡ ${product.delivery_time}</div><span class="cod-badge">COD Available</span><br><button class="add-btn" onclick="addToCart(${product.id}, '${product.name.replace(/'/g, "\\'")}', ${product.price})" style="margin-top:8px;">ADD</button>`;
+                    container.appendChild(card);
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadOrderHistory(userEmail) {
+            try {
+                const res = await fetch(`${API_BASE}/order-history/${encodeURIComponent(userEmail)}`);
+                const data = await res.json();
+                const container = document.getElementById('orders-container');
+                const section = document.getElementById('order-history-section');
+                section.style.display = 'block'; container.innerHTML = '';
+                if (!data.orders || data.orders.length === 0) { container.innerHTML = '<p>No orders found.</p>'; return; }
+                data.orders.forEach(order => {
+                    const card = document.createElement('div'); card.className = 'order-card';
+                    const statusColor = order.status === 'delivered' ? '#4CAF50' : 
+                                       order.status === 'confirmed' ? '#2196F3' : '#ff9800';
+                    card.innerHTML = `<p><strong>Order #${order.id}</strong> <span style="color:${statusColor};font-size:12px;font-weight:600;">[${order.status.toUpperCase()}]</span> <span class="cod-label">COD</span></p><p class="order-price">₹${order.total_price}</p><p style="font-size:13px;color:#666;">${new Date(order.order_date).toLocaleString()}</p><p>Items: ${order.items}</p>`;
+                    container.appendChild(card);
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        // ===== ADMIN FUNCTIONS =====
+        async function loadAdminStats() {
+            try {
+                const res = await fetch(`${API_BASE}/admin/stats`);
+                const data = await res.json();
+                document.getElementById('admin-stat-users').textContent = data.total_users;
+                document.getElementById('admin-stat-products').textContent = data.total_products;
+                document.getElementById('admin-stat-orders').textContent = data.total_orders;
+                document.getElementById('admin-stat-revenue').textContent = '₹' + data.total_revenue;
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadAdminProducts() {
+            try {
+                const res = await fetch(`${API_BASE}/products`);
+                const data = await res.json();
+                const tbody = document.getElementById('admin-products-table');
+                if (data.products.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:#999;">No products</td></tr>'; return; }
+                tbody.innerHTML = data.products.map(p => `<tr><td>${p.id}</td><td>${p.name}</td><td>₹${p.price}</td><td>${p.category}</td><td><button class="admin-btn btn-red" onclick="adminDeleteProduct(${p.id})">Delete</button></td></tr>`).join('');
+            } catch (e) { console.error(e); }
+        }
+
+        async function adminAddProduct() {
+            const name = document.getElementById('admin-prod-name').value;
+            const price = parseInt(document.getElementById('admin-prod-price').value);
+            const category = document.getElementById('admin-prod-category').value;
+            const image = document.getElementById('admin-prod-image').value || 'https://via.placeholder.com/200';
+            if (!name || !price) { alert('Fill name and price!'); return; }
+            try {
+                const res = await fetch(`${API_BASE}/admin/products`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, price, category, delivery_time: '10 min delivery', image })
+                });
+                const data = await res.json();
+                alert(data.message);
+                document.getElementById('admin-prod-name').value = '';
+                document.getElementById('admin-prod-price').value = '';
+                document.getElementById('admin-prod-image').value = '';
+                loadAdminProducts(); loadAdminStats();
+            } catch (e) { alert('Failed!'); }
+        }
+
+        async function adminDeleteProduct(id) {
+            if (!confirm('Delete this product?')) return;
+            try {
+                const res = await fetch(`${API_BASE}/admin/products/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                alert(data.message);
+                loadAdminProducts(); loadAdminStats();
+            } catch (e) { alert('Failed!'); }
+        }
+
+        async function loadAdminOrders() {
+            try {
+                const res = await fetch(`${API_BASE}/admin/orders`);
+                const data = await res.json();
+                const tbody = document.getElementById('admin-orders-table');
+                if (data.orders.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:#999;">No orders</td></tr>'; return; }
+                tbody.innerHTML = data.orders.map(o => {
+                    const statusBadge = o.status === 'delivered' 
+                        ? '<span style="background:#4CAF50;color:white;padding:2px 8px;border-radius:10px;font-size:12px;">DELIVERED</span>' 
+                        : o.status === 'confirmed'
+                        ? '<span style="background:#2196F3;color:white;padding:2px 8px;border-radius:10px;font-size:12px;">CONFIRMED</span>'
+                        : '<span style="background:#ff9800;color:white;padding:2px 8px;border-radius:10px;font-size:12px;">PENDING</span>';
+                    return `<tr><td>#${o.id}</td><td>${o.user_email}</td><td>${o.items}</td><td>₹${o.total_price}</td><td>${statusBadge}</td><td><span class="cod-label">COD</span></td><td>${new Date(o.order_date).toLocaleString()}</td></tr>`;
+                }).join('');
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadAdminUsers() {
+            try {
+                const res = await fetch(`${API_BASE}/admin/users`);
+                const data = await res.json();
+                const tbody = document.getElementById('admin-users-table');
+                if (data.users.length === 0) { tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;padding:30px;color:#999;">No users</td></tr>'; return; }
+                tbody.innerHTML = data.users.map(u => `<tr><td>${u.id}</td><td>${u.username}</td></tr>`).join('');
+            } catch (e) { console.error(e); }
+        }
+
+        // Init
+        loadProducts();
+    </script>
+</body>
+</html>
