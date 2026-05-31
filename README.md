@@ -17,10 +17,6 @@ It includes frontend UI and backend integration.
 
 ---
 
-## 🚀 How to Run
-
-1. Install Flask:
----
 
 ## 🚀 Project Submission Details
 
